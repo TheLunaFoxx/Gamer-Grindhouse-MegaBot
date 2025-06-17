@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pyrogram import Client, filters, enums, idle
 from pyrogram.types import Message
 from keep_alive import keep_alive
+from pyrogram.enums import ChatMemberStatus  # 🆕 Import for admin/bot checks
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
@@ -161,12 +162,30 @@ async def auto_delete(_, msg: Message):
                 pass
 
 @app.on_chat_member_updated()
-async def on_new_group(_, event):
-    if event.new_chat_member.user.id == (await app.get_me()).id:
-        chat_id = event.chat.id
+async def on_chat_member_update(_, event):
+    user = event.new_chat_member.user
+    chat_id = event.chat.id
+
+    # If the bot has just been added to a group
+    if user.id == (await app.get_me()).id:
         async for member in app.get_chat_members(chat_id):
+            if (
+                member.user.is_bot or
+                member.user.id == OWNER_ID or
+                member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
+            ):
+                continue
             frees[member.user.id] = None
-        await app.send_message(chat_id, "Bot has joined! All users unfree’d for now!")
+        await app.send_message(chat_id, "Bot has joined! All non-admin users unfree’d for now!")
+    else:
+        # Handle *new user joining the group*
+        if (
+            user.is_bot or
+            user.id == OWNER_ID or
+            event.new_chat_member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
+        ):
+            if user.id in frees:
+                del frees[user.id]  # Make sure they aren't muted!
 
 keep_alive()
 
