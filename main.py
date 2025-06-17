@@ -150,15 +150,25 @@ async def unfree_all(_, msg: Message):
 
 @app.on_message(filters.group)
 async def auto_delete(_, msg: Message):
-    if msg.from_user.id in frees:
-        until = frees[msg.from_user.id]
-        if until and datetime.now(timezone.utc) > until:
-            del frees[msg.from_user.id]
-        else:
-            try:
+    try:
+        # ✅ Don't mute bots
+        if msg.from_user.is_bot:
+            return
+
+        # ✅ Don't mute group admins or the OWNER
+        member = await app.get_chat_member(msg.chat.id, msg.from_user.id)
+        if member.status in ("administrator", "creator") or msg.from_user.id == OWNER_ID:
+            return
+
+        # ✅ If user is "freed", check expiry
+        if msg.from_user.id in frees:
+            until = frees[msg.from_user.id]
+            if until and datetime.now(timezone.utc) > until:
+                del frees[msg.from_user.id]
+            else:
                 await msg.delete()
-            except:
-                pass
+    except Exception as e:
+        print(f"[ERROR] auto_delete failed: {e}")
 
 @app.on_chat_member_updated()
 async def on_new_group(_, event):
