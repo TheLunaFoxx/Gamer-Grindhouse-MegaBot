@@ -1,7 +1,7 @@
 import asyncio
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pyrogram import Client, filters, enums, idle
 from pyrogram.types import Message
 from keep_alive import keep_alive
@@ -119,7 +119,7 @@ async def free(_, msg: Message):
         await msg.reply("Invalid time format. Use 1d, 2h, 30m, or 0 for infinite.")
         return
 
-    until = None if duration == "0" else datetime.utcnow() + tdelta
+    until = None if duration == "0" else datetime.now(timezone.utc) + tdelta
     frees[target.id] = until
     await msg.reply(f"✅ {user_mention} has been freed {'forever' if until is None else f'until {until}'}")
 
@@ -152,7 +152,7 @@ async def unfree_all(_, msg: Message):
 async def auto_delete(_, msg: Message):
     if msg.from_user.id in frees:
         until = frees[msg.from_user.id]
-        if until and datetime.utcnow() > until:
+        if until and datetime.now(timezone.utc) > until:
             del frees[msg.from_user.id]
         else:
             try:
