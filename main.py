@@ -6,9 +6,6 @@ from datetime import datetime, timedelta
 from pyrogram import Client, filters, enums, idle
 from pyrogram.types import Message
 from keep_alive import keep_alive
-from dotenv import load_dotenv
-
-load_dotenv()
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
