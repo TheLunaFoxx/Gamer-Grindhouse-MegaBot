@@ -47,7 +47,7 @@ async def verify(_, msg: Message):
     username = msg.from_user.username or msg.from_user.first_name
     verifying[msg.from_user.id] = {'video': None, 'photo': None}
     await msg.reply_text(
-        f"It's time to verify {username}!\n\n🎥 Please long-press the mic to record a live video saying today's date, your username, and 'verifying for Gamer Grindhouse'.\n📸 Then send a screenshot of your ID or website profile."
+        f"It's time to verify {username}!\n\n🎥 Please long-press the mic to record a live video saying today's date, your username, and 'verifying for Gamer Grindhouse'.\n📸 Then send a screenshot of your ID or website profile.\n\nPlease send them in this order to ensure your information is sent to the owner correctly! ❤️"
     )
     await msg.reply_text("Checking fedban status with @MissRose_Bot... 👮‍♀️")
     await app.send_message("MissRose_bot", f"/fbanstat @{username}")
@@ -57,14 +57,14 @@ async def verify(_, msg: Message):
 async def video_received(_, msg: Message):
     if msg.from_user.id in verifying:
         verifying[msg.from_user.id]['video'] = msg
-        await msg.reply("✅ Video received! Now please send your ID or website screenshot.")
+        await msg.reply("✅ Video received!\nNow please send your ID or website screenshot!")
 
 @app.on_message(filters.private & filters.photo)
 async def photo_received(_, msg: Message):
     if msg.from_user.id in verifying:
         verifying[msg.from_user.id]['photo'] = msg
         data = verifying[msg.from_user.id]
-        await msg.reply("🎉 Your verification has been sent to an admin!")
+        await msg.reply("🎉 Your verification has been sent to the owner, and a decision will be made ASAP!")
 
         video_msg = data['video']
         photo_msg = data['photo']
@@ -90,11 +90,11 @@ async def approve_or_reject(_, msg: Message):
             approved_users.add(user_id)
             with open(LOG_FILE, "a") as f:
                 f.write(f"{user_id}\n")
-        await app.send_message(user_id, "✅ You're approved! Welcome to the network!\nClick to join: https://t.me/+Rp4xgxUFrMdjZTZk")
+        await app.send_message(user_id, "✅ You're approved! Welcome to the network!\nClick to join the network and groups: https://t.me/addlist/mt_KC0gfzBkzMzk0\n\nRules:\n✅ Please ensure you complete your POP to unlock within 24 hours of joining the network,\n✅ SFW flyers only. This means no nips, bits or cracks to be visible AT ALL (they can be blurred, don't worry!),\n✅ Do NOT message potential buyers first. If you are caught doing this, it will result in an instant ban and fedban,\n✅ Assistants are allowed to complete POP on your behalf, but please direct them to myself (the MegaBot) to complete verification!")
 
     elif msg.text.lower().startswith("reject"):
         reason = msg.text.split(" ", 1)[1] if " " in msg.text else "No reason provided"
-        await app.send_message(user_id, f"❌ Verification rejected: {reason}\nTry again with /verify or contact @The_LunaFoxx.")
+        await app.send_message(user_id, f"❌ Verification rejected: {reason}\nTry again with /verify or contact @The_LunaFoxx if you're having any issues!")
 
 @app.on_message(filters.command("free") & filters.group)
 async def free(_, msg: Message):
@@ -109,7 +109,7 @@ async def free(_, msg: Message):
     try:
         target = await app.get_users(msg.command[1])
     except:
-        await msg.reply("Couldn't find that user.")
+        await msg.reply("❌ Couldn't find that user.")
         return
 
     if target.username == "TestLunaFoxx":
@@ -134,12 +134,12 @@ async def unfree(_, msg: Message):
     try:
         target = await app.get_users(msg.command[1])
     except:
-        await msg.reply("Couldn't find that user.")
+        await msg.reply("❌ Couldn't find that user.")
         return
 
     if target.id in frees:
         del frees[target.id]
-        await msg.reply(f"{target.mention} has been unfreed.")
+        await msg.reply(f"❌ {target.mention} has been unfreed. If this user is a model, ensure they complete POP!")
 
 @app.on_message(filters.command("unfree_all") & filters.group)
 async def unfree_all(_, msg: Message):
@@ -176,7 +176,7 @@ async def on_chat_member_update(_, event):
             ):
                 continue
             frees[member.user.id] = None
-        await app.send_message(chat_id, "Bot has joined! All non-admin users unfree’d for now!")
+        await app.send_message(chat_id, "Bot has joined! All non-admin users unfree’d for now! ❌")
     else:
         # Handle *new user joining the group*
         if (
