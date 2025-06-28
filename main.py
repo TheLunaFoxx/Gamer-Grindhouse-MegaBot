@@ -188,7 +188,8 @@ keep_alive()
 async def main():
     await app.start()
     await set_bot_user()
-    print("\ud83e\udd16 MegaBot is alive and slaying!")
-    await app.stop()
+    print("🤖 MegaBot is alive and slaying!")
+    await asyncio.Event().wait()  # This keeps it alive like idle() used to
 
 asyncio.run(main())
+
