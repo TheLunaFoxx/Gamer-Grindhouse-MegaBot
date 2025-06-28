@@ -193,7 +193,7 @@ async def on_chat_member_update(_, event):
     user = event.new_chat_member.user
     chat_id = event.chat.id
 
-    # When the bot is added to a group
+    # If the bot joins a group, unfree everyone so it doesn't mute them by default
     if user.id == (await app.get_me()).id:
         async for member in app.get_chat_members(chat_id):
             if (
@@ -202,33 +202,27 @@ async def on_chat_member_update(_, event):
                 member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
             ):
                 continue
-            frees[member.user.id] = None
-        await app.send_message(chat_id, "<b>Bot has joined! All non-admin users unfree’d for now!</b> ❌",
-            parse_mode=ParseMode.HTML
-        )
+            frees[member.user.id] = None  # Unfree by default
+        await app.send_message(chat_id, "<b>👋 Bot added to group. All non-admin users set to unfree by default.</b>", parse_mode=ParseMode.HTML)
         return
 
-    # Handle normal users joining
+    # When a new member joins
     if (
         not user.is_bot and
         user.id != OWNER_ID and
         event.new_chat_member.status == ChatMemberStatus.MEMBER
     ):
-        # Get member's admin status
         member = await app.get_chat_member(chat_id, user.id)
         if member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
             return
 
+        # Unfree them so messages delete automatically
+        frees[user.id] = None
+        print(f"[DEBUG] New user {user.id} added to frees list (unfree'd)")
         try:
-            await app.restrict_chat_member(
-                chat_id,
-                user.id,
-                permissions=ChatPermissions(),  # Empty = fully muted
-            )
-            frees[user.id] = None
-            await app.send_message(chat_id, f"🔒 <b>{user.mention} has been muted until verified.</b>", parse_mode=ParseMode.HTML)
-        except Exception as e:
-            print(f"[ERROR] Failed to mute {user.id}: {e}")
+            await app.send_message(chat_id, f"❌ <b>{user.mention} has been unfree’d.</b> They must complete POP to post.", parse_mode=ParseMode.HTML)
+        except:
+            pass
 
 keep_alive()
 
