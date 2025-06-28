@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pyrogram.enums import ParseMode
 from pyrogram import Client, filters, enums, idle
 from pyrogram.types import Message
+from pyrogram.types import ChatPermissions
 from keep_alive import keep_alive
 from pyrogram.enums import ChatMemberStatus  # 🆕 Import for admin/bot checks
 
@@ -192,7 +193,7 @@ async def on_chat_member_update(_, event):
     user = event.new_chat_member.user
     chat_id = event.chat.id
 
-    # If the bot has just been added to a group
+    # When the bot is added to a group
     if user.id == (await app.get_me()).id:
         async for member in app.get_chat_members(chat_id):
             if (
@@ -203,17 +204,31 @@ async def on_chat_member_update(_, event):
                 continue
             frees[member.user.id] = None
         await app.send_message(chat_id, "<b>Bot has joined! All non-admin users unfree’d for now!</b> ❌",
-	parse_mode=ParseMode.HTML
-)
-    else:
-        # Handle *new user joining the group*
-        if (
-            user.is_bot or
-            user.id == OWNER_ID or
-            event.new_chat_member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
-        ):
-            if user.id in frees:
-                del frees[user.id]  # Make sure they aren't muted!
+            parse_mode=ParseMode.HTML
+        )
+        return
+
+    # Handle normal users joining
+    if (
+        not user.is_bot and
+        user.id != OWNER_ID and
+        event.new_chat_member.status == ChatMemberStatus.MEMBER
+    ):
+        # Get member's admin status
+        member = await app.get_chat_member(chat_id, user.id)
+        if member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+            return
+
+        try:
+            await app.restrict_chat_member(
+                chat_id,
+                user.id,
+                permissions=ChatPermissions(),  # Empty = fully muted
+            )
+            frees[user.id] = None
+            await app.send_message(chat_id, f"🔒 <b>{user.mention} has been muted until verified.</b>", parse_mode=ParseMode.HTML)
+        except Exception as e:
+            print(f"[ERROR] Failed to mute {user.id}: {e}")
 
 keep_alive()
 
