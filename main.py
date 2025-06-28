@@ -202,7 +202,7 @@ async def on_chat_member_update(_, event):
     chat_id = event.chat.id
 
     # If the bot joins a group, unfree everyone so it doesn't mute them by default
-    if user.id == (await app.get_me()).id:
+    if user.id == BOT_USER:
         async for member in app.get_chat_members(chat_id):
             if (
                 member.user.is_bot or
