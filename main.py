@@ -3,38 +3,38 @@ import os
 import re
 from datetime import datetime, timedelta, timezone
 from pyrogram.enums import ParseMode
-from pyrogram import Client, filters, enums, idle
+from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.types import ChatPermissions
 from keep_alive import keep_alive
-from pyrogram.enums import ChatMemberStatus  # 🆕 Import for admin/bot checks
+from pyrogram.enums import ChatMemberStatus
 
 API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = 7868250691
 LOG_FILE = "verified_users.txt"
-BOT_USER = None  # Will store the bot's Telegram user ID after startup
 
-print("🔧 [DEBUG] ENV Loaded:")
+print("\ud83d\udd27 [DEBUG] ENV Loaded:")
 print("API_ID:", API_ID)
 print("API_HASH:", API_HASH)
 print("BOT_TOKEN:", "HIDDEN" if BOT_TOKEN else "None")
 
 app = Client("megabot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-async def set_bot_user():
-    global BOT_USER
-    me = await app.get_me()
-    BOT_USER = me.id
-
-app.add_handler(filters.all, set_bot_user())
-
 frees = {}
 verifying = {}
 approved_users = set()
 verification_map = {}
 
+BOT_USER = None
+
+async def set_bot_user():
+    global BOT_USER
+    me = await app.get_me()
+    BOT_USER = me.id
+
+# Utility function to parse duration like 3d, 4h, 30m
 def parse_time(text):
     match = re.match(r"(\d+)([dhm])", text)
     if not match:
@@ -49,22 +49,14 @@ def parse_time(text):
 @app.on_message(filters.command("start") & filters.private)
 async def start(_, msg: Message):
     print(f"[DEBUG] /start received from {msg.from_user.id}")
-    print(f"[DEBUG] Message: {msg.text}")
-    await msg.reply_text(f"Welcome to <b>Gamer Grindhouse Network Verification Bot {msg.from_user.mention}!</b> 🎮\n\nClick /verify to continue ❤️",
-	parse_mode=ParseMode.HTML
-)
+    await msg.reply_text(f"Welcome to <b>Gamer Grindhouse Network Verification Bot {msg.from_user.mention}!</b> 🎮\n\nClick /verify to continue ❤️", parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.command("verify") & filters.private)
 async def verify(_, msg: Message):
     username = msg.from_user.username or msg.from_user.first_name
     verifying[msg.from_user.id] = {'video': None, 'photo': None}
-    await msg.reply_text(
-        f"It's time to verify {username}!\n\n🎥 Please click the mic in the bottom right corner to change it to a camera. Then, <b>long-press the camera</b> to record a live video saying <b>today's date, your username, and 'verifying for Gamer Grindhouse'.</b>\n📸 Then send a <b>screenshot of your ID</b> or <b>18+ website profile <i>(Onlyfans, Fansly etc. Make sure your username is visible!)</i></b>.\n\nPlease send them <b>in this order</b> to ensure your information is sent to the owner correctly! ❤️",
-    parse_mode=ParseMode.HTML
-)
-    await msg.reply_text("<b>Checking fedban status with @MissRose_Bot... 👮‍♀️</b>",
-	parse_mode=ParseMode.HTML
-)
+    await msg.reply_text(f"It's time to verify {username}!\n\n🎥 Please click the mic in the bottom right corner to change it to a camera. Then, <b>long-press the camera</b> to record a live video saying <b>today's date, your username, and 'verifying for Gamer Grindhouse'.</b>\n📸 Then send a <b>screenshot of your ID</b> or <b>18+ website profile <i>(Onlyfans, Fansly etc. Make sure your username is visible!)</i></b>.\n\nPlease send them <b>in this order</b> to ensure your information is sent to the owner correctly! ❤️", parse_mode=ParseMode.HTML)
+    await msg.reply_text("<b>Checking fedban status with @MissRose_Bot... 👮‍♀️</b>", parse_mode=ParseMode.HTML)
     await app.send_message("MissRose_bot", f"/fbanstat @{username}")
     await asyncio.sleep(2)
 
@@ -72,18 +64,14 @@ async def verify(_, msg: Message):
 async def video_received(_, msg: Message):
     if msg.from_user.id in verifying:
         verifying[msg.from_user.id]['video'] = msg
-        await msg.reply("✅ Video received!\nNow please send your <b>ID</b> or <b>website screenshot!</b>",
-	parse_mode=ParseMode.HTML
-)
+        await msg.reply("✅ Video received! Now please send your <b>ID</b> or <b>website screenshot!</b>", parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.private & filters.photo)
 async def photo_received(_, msg: Message):
     if msg.from_user.id in verifying:
         verifying[msg.from_user.id]['photo'] = msg
         data = verifying[msg.from_user.id]
-        await msg.reply("🎉 Your verification has been sent to the owner, and a decision will be made <b><i>ASAP!</i></b>",
-	parse_mode=ParseMode.HTML
-)
+        await msg.reply("🎉 Your verification has been sent to the owner, and a decision will be made <b><i>ASAP!</i></b>", parse_mode=ParseMode.HTML)
 
         video_msg = data['video']
         photo_msg = data['photo']
@@ -94,7 +82,7 @@ async def photo_received(_, msg: Message):
         verification_map[fwd_video.id] = msg.from_user.id
         verification_map[fwd_photo.id] = msg.from_user.id
 
-        await app.send_message(OWNER_ID, f"⚠️ Don't forget to check @{msg.from_user.username or msg.from_user.first_name}'s fedbans with @MissRose_Bot!")
+        await app.send_message(OWNER_ID, f"⚠️ Don’t forget to check @{msg.from_user.username or msg.from_user.first_name}'s fedbans!")
 
 @app.on_message(filters.private & filters.reply & filters.user(OWNER_ID))
 async def approve_or_reject(_, msg: Message):
@@ -102,87 +90,63 @@ async def approve_or_reject(_, msg: Message):
     user_id = verification_map.get(replied_msg.id)
 
     if not user_id:
-        return await msg.reply("❌ <b>Couldn’t match this verification to a user.</b>\nPlease ask them to <b>restart</b>.",
-	parse_mode=ParseMode.HTML
-)
+        return await msg.reply("❌ <b>Couldn’t match this verification to a user.</b>\nPlease ask them to <b>restart</b>.", parse_mode=ParseMode.HTML)
 
     if msg.text.lower().startswith("approve"):
-        if user_id and user_id != "TestLunaFoxx":
+        if user_id != "TestLunaFoxx":
             approved_users.add(user_id)
             with open(LOG_FILE, "a") as f:
                 f.write(f"{user_id}\n")
-        await app.send_message(user_id, "✅ <b>You're approved!</b> Welcome to the network!\nClick below to join the network and groups 👇\n<b><u>https://t.me/addlist/mt_KC0gfZBkzMzk0</u></b>\n\nRules:\n✅ Please ensure you <b>complete your POP to unlock</b> within <b>24 hours</b> of joining the network,\n✅ <b><u>SFW flyers only</u></b>. This means <b>no <i>nips</i>, <i>bits</i> or <i>cracks</i></b> to be visible AT ALL (they can be <b>blurred</b>, don't worry!),\n✅ Do <b><u>NOT</u></b> message potential buyers first. If you are caught doing this, it will result in an <b>instant ban and fedban against your name</b>,\n✅ <b>Assistants</b> are allowed to complete POP on your behalf, but please direct them to myself (<u>@GamerGrindhouseMegaBot</u>) to <b>complete verification</b>!",
-	parse_mode=ParseMode.HTML
-)
+        await app.send_message(user_id, "✅ <b>You're approved!</b> Welcome to the network!\nClick below to join the network and groups 👇\n<b><u>https://t.me/addlist/mt_KC0gfZBkzMzk0</u></b>\n\nRules:\n✅ Please ensure you <b>complete your POP to unlock</b> within <b>24 hours</b> of joining the network,\n✅ <b><u>SFW flyers only</u></b>. This means <b>no <i>nips</i>, <i>bits</i> or <i>cracks</i></b> to be visible AT ALL (they can be <b>blurred</b>, don't worry!),\n✅ Do <b><u>NOT</u></b> message potential buyers first. If you are caught doing this, it will result in an <b>instant ban and fedban against your name</b>,\n✅ <b>Assistants</b> are allowed to complete POP on your behalf, but please direct them to myself (<u>@GamerGrindhouseMegaBot</u>) to <b>complete verification</b>!", parse_mode=ParseMode.HTML)
 
     elif msg.text.lower().startswith("reject"):
         reason = msg.text.split(" ", 1)[1] if " " in msg.text else "No reason provided"
-        await app.send_message(user_id, f"❌ <b>Verification rejected:</b> {reason}\n<b>Try again</b> with /verify or contact @The_LunaFoxx if you're having any issues!",
-	parse_mode=ParseMode.HTML
-)
+        await app.send_message(user_id, f"❌ <b>Verification rejected:</b> {reason}\n<b>Try again</b> with /verify or contact @The_LunaFoxx if you're having any issues!", parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.command("free") & filters.group)
 async def free(_, msg: Message):
-    if msg.from_user.id != OWNER_ID and not msg.from_user.is_chat_admin():
-        return
+    if msg.from_user.id != OWNER_ID and not msg.from_user.is_chat_admin(): return
     if len(msg.command) < 3:
         await msg.reply("Usage: /free @username 3d")
         return
-    user_mention = msg.command[1]
-    duration = msg.command[2]
 
     try:
         target = await app.get_users(msg.command[1])
     except:
-        await msg.reply("❌ <b>Couldn't find that user.</b>",
-	parse_mode=ParseMode.HTML
-)
+        await msg.reply("❌ <b>Couldn't find that user.</b>", parse_mode=ParseMode.HTML)
         return
 
-    if target.username == "TestLunaFoxx":
+    tdelta = parse_time(msg.command[2])
+    if tdelta is None and msg.command[2] != "0":
+        await msg.reply("Invalid format. Use 1d, 2h, 30m or 0 for forever.")
         return
 
-    tdelta = parse_time(duration)
-    if tdelta is None and duration != "0":
-        await msg.reply("Invalid time format. Use 1d, 2h, 30m, or 0 for infinite.")
-        return
-
-    until = None if duration == "0" else datetime.now(timezone.utc) + tdelta
+    until = None if msg.command[2] == "0" else datetime.now(timezone.utc) + tdelta
     frees[target.id] = until
-    await msg.reply(f"✅ <b>{user_mention} has been freed</b> {'forever' if until is None else f'until {until}'}",
-	parse_mode=ParseMode.HTML
-)
+    await msg.reply(f"✅ <b>{target.mention} has been free'd</b> {'forever' if until is None else f'until {until}'}", parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.command("unfree") & filters.group)
 async def unfree(_, msg: Message):
-    if msg.from_user.id != OWNER_ID and not msg.from_user.is_chat_admin():
-        return
+    if msg.from_user.id != OWNER_ID and not msg.from_user.is_chat_admin(): return
     if len(msg.command) < 2:
         await msg.reply("Usage: /unfree @username")
         return
+
     try:
         target = await app.get_users(msg.command[1])
     except:
-        await msg.reply("❌ <b>Couldn't find that user.</b>",
-	parse_mode=ParseMode.HTML
-)
+        await msg.reply("❌ <b>Couldn't find that user.</b>", parse_mode=ParseMode.HTML)
         return
 
     if target.id in frees:
         del frees[target.id]
-        await msg.reply(f"❌ <b>{target.mention} has been unfreed</b>. If this user is a model, ensure they <b>complete POP!</b>",
-	parse_mode=ParseMode.HTML
-)
+        await msg.reply(f"❌ <b>{target.mention} has been unfree'd.</b>", parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.command("unfree_all") & filters.group)
 async def unfree_all(_, msg: Message):
-    if msg.from_user.id != OWNER_ID and not msg.from_user.is_chat_admin():
-        return
-    for uid in list(frees.keys()):
-        del frees[uid]
-    await msg.reply("🧹 <b>All users have been unfree’d.</b>",
-	parse_mode=ParseMode.HTML
-)
+    if msg.from_user.id != OWNER_ID and not msg.from_user.is_chat_admin(): return
+    frees.clear()
+    await msg.reply("🧹 <b>All users have been unfree'd.</b>", parse_mode=ParseMode.HTML)
 
 @app.on_message(filters.group)
 async def auto_delete(_, msg: Message):
@@ -193,49 +157,38 @@ async def auto_delete(_, msg: Message):
         else:
             try:
                 await msg.delete()
-            except:
-                pass
+            except: pass
 
 @app.on_chat_member_updated()
 async def on_chat_member_update(_, event):
+    global BOT_USER
     user = event.new_chat_member.user
     chat_id = event.chat.id
 
-    # If the bot joins a group, unfree everyone so it doesn't mute them by default
     if user.id == BOT_USER:
         async for member in app.get_chat_members(chat_id):
-            if (
-                member.user.is_bot or
-                member.user.id == OWNER_ID or
-                member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
-            ):
+            if member.user.is_bot or member.user.id == OWNER_ID or member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
                 continue
-            frees[member.user.id] = None  # Unfree by default
-        await app.send_message(chat_id, "<b>👋 Bot added to group. All non-admin users set to unfree by default.</b>", parse_mode=ParseMode.HTML)
-        return
-
-    # When a new member joins
-    if (
-        not user.is_bot and
-        user.id != OWNER_ID and
-        event.new_chat_member.status == ChatMemberStatus.MEMBER
-    ):
+            frees[member.user.id] = None
+        await app.send_message(chat_id, "<b>👋 Bot added to group. All non-admin users unfree'd by default.</b>", parse_mode=ParseMode.HTML)
+    elif user.id != OWNER_ID and event.new_chat_member.status == ChatMemberStatus.MEMBER:
         member = await app.get_chat_member(chat_id, user.id)
-        if member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
-            return
-
-        # Unfree them so messages delete automatically
-        frees[user.id] = None
-        print(f"[DEBUG] New user {user.id} added to frees list (unfree'd)")
-        try:
-            await app.send_message(chat_id, f"❌ <b>{user.mention} has been unfree’d.</b> They must complete POP to post.", parse_mode=ParseMode.HTML)
-        except:
-            pass
+        if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
+            frees[user.id] = None
+            print(f"[DEBUG] New user {user.id} added to frees list")
+            try:
+                sent = await app.send_message(chat_id, f"❌ <b>{user.mention} has been unfree'd.</b> They must complete POP to post if they are a model!", parse_mode=ParseMode.HTML)
+                await asyncio.sleep(30)
+                await sent.delete()
+            except:
+                pass
 
 keep_alive()
 
-print("🤖 MegaBot is alive and slaying!")
-# Initialize the bot user ID before running
-app.start()
-asyncio.get_event_loop().run_until_complete(set_bot_user())
-app.idle()
+async def main():
+    await app.start()
+    await set_bot_user()
+    print("\ud83e\udd16 MegaBot is alive and slaying!")
+    await app.stop()
+
+asyncio.run(main())
