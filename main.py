@@ -40,8 +40,9 @@ def parse_time(text):
 async def start(_, msg: Message):
     print(f"[DEBUG] /start received from {msg.from_user.id}")
     print(f"[DEBUG] Message: {msg.text}")
-    await msg.reply_text(f"Welcome to <b>Gamer Grindhouse Network Verification Bot {msg.from_user.mention}!</b> 🎮\n\nClick /verify to continue ❤️")
+    await msg.reply_text(f"Welcome to <b>Gamer Grindhouse Network Verification Bot {msg.from_user.mention}!</b> 🎮\n\nClick /verify to continue ❤️"
 	parse_mode="HTML"
+)
 
 @app.on_message(filters.command("verify") & filters.private)
 async def verify(_, msg: Message):
@@ -49,26 +50,30 @@ async def verify(_, msg: Message):
     verifying[msg.from_user.id] = {'video': None, 'photo': None}
     await msg.reply_text(
         f"It's time to verify {username}!\n\n🎥 Please click the mic in the bottom right corner to change it to a camera. Then, <b>long-press the camera</b> to record a live video saying <b>today's date, your username, and 'verifying for Gamer Grindhouse'.</b>\n📸 Then send a <b>screenshot of your ID</b> or <b>18+ website profile <i>(Onlyfans, Fansly etc. Make sure your username is visible!)</i></b>.\n\nPlease send them <b>in this order</b> to ensure your information is sent to the owner correctly! ❤️"
-    )
-    await msg.reply_text("<b>Checking fedban status with @MissRose_Bot... 👮‍♀️</b>")
+    parse_mode="HTML"
+)
+    await msg.reply_text("<b>Checking fedban status with @MissRose_Bot... 👮‍♀️</b>"
+	parse_mode="HTML"
+)
     await app.send_message("MissRose_bot", f"/fbanstat @{username}")
     await asyncio.sleep(2)
-	parse_mode="HTML"
 
 @app.on_message(filters.private & filters.video_note)
 async def video_received(_, msg: Message):
     if msg.from_user.id in verifying:
         verifying[msg.from_user.id]['video'] = msg
-        await msg.reply("✅ Video received!\nNow please send your <b>ID</b> or <b>website screenshot!</b>")
+        await msg.reply("✅ Video received!\nNow please send your <b>ID</b> or <b>website screenshot!</b>"
 	parse_mode="HTML"
+)
 
 @app.on_message(filters.private & filters.photo)
 async def photo_received(_, msg: Message):
     if msg.from_user.id in verifying:
         verifying[msg.from_user.id]['photo'] = msg
         data = verifying[msg.from_user.id]
-        await msg.reply("🎉 Your verification has been sent to the owner, and a decision will be made <b><i>ASAP!</i></b>")
+        await msg.reply("🎉 Your verification has been sent to the owner, and a decision will be made <b><i>ASAP!</i></b>"
 	parse_mode="HTML"
+)
 
         video_msg = data['video']
         photo_msg = data['photo']
@@ -87,21 +92,24 @@ async def approve_or_reject(_, msg: Message):
     user_id = verification_map.get(replied_msg.id)
 
     if not user_id:
-        return await msg.reply("❌ <b>Couldn’t match this verification to a user.</b>\nPlease ask them to <b>restart</b>.")
+        return await msg.reply("❌ <b>Couldn’t match this verification to a user.</b>\nPlease ask them to <b>restart</b>."
 	parse_mode="HTML"
+)
 
     if msg.text.lower().startswith("approve"):
         if user_id and user_id != "TestLunaFoxx":
             approved_users.add(user_id)
             with open(LOG_FILE, "a") as f:
                 f.write(f"{user_id}\n")
-        await app.send_message(user_id, "✅ <b>You're approved!</b> Welcome to the network!\nClick below to join the network and groups 👇\n<b><u>https://t.me/addlist/mt_KC0gfZBkzMzk0</u></b>\n\nRules:\n✅ Please ensure you <b>complete your POP to unlock</b> within <b>24 hours</b> of joining the network,\n✅ <b><u>SFW flyers only</u></b>. This means <b>no <i>nips</i>, <i>bits</i> or <i>cracks</i></b> to be visible AT ALL (they can be <b>blurred</b>, don't worry!),\n✅ Do <b><u>NOT</u></b> message potential buyers first. If you are caught doing this, it will result in an <b>instant ban and fedban against your name</b>,\n✅ <b>Assistants</b> are allowed to complete POP on your behalf, but please direct them to myself (<u>@GamerGrindhouseMegaBot</u>) to <b>complete verification</b>!")
+        await app.send_message(user_id, "✅ <b>You're approved!</b> Welcome to the network!\nClick below to join the network and groups 👇\n<b><u>https://t.me/addlist/mt_KC0gfZBkzMzk0</u></b>\n\nRules:\n✅ Please ensure you <b>complete your POP to unlock</b> within <b>24 hours</b> of joining the network,\n✅ <b><u>SFW flyers only</u></b>. This means <b>no <i>nips</i>, <i>bits</i> or <i>cracks</i></b> to be visible AT ALL (they can be <b>blurred</b>, don't worry!),\n✅ Do <b><u>NOT</u></b> message potential buyers first. If you are caught doing this, it will result in an <b>instant ban and fedban against your name</b>,\n✅ <b>Assistants</b> are allowed to complete POP on your behalf, but please direct them to myself (<u>@GamerGrindhouseMegaBot</u>) to <b>complete verification</b>!"
 	parse_mode="HTML"
+)
 
     elif msg.text.lower().startswith("reject"):
         reason = msg.text.split(" ", 1)[1] if " " in msg.text else "No reason provided"
-        await app.send_message(user_id, f"❌ <b>Verification rejected:</b> {reason}\n<b>Try again</b> with /verify or contact @The_LunaFoxx if you're having any issues!")
+        await app.send_message(user_id, f"❌ <b>Verification rejected:</b> {reason}\n<b>Try again</b> with /verify or contact @The_LunaFoxx if you're having any issues!"
 	parse_mode="HTML"
+)
 
 @app.on_message(filters.command("free") & filters.group)
 async def free(_, msg: Message):
@@ -116,9 +124,10 @@ async def free(_, msg: Message):
     try:
         target = await app.get_users(msg.command[1])
     except:
-        await msg.reply("❌ <b>Couldn't find that user.</b>")
-        return
+        await msg.reply("❌ <b>Couldn't find that user.</b>"
 	parse_mode="HTML"
+)
+        return
 
     if target.username == "TestLunaFoxx":
         return
@@ -130,8 +139,9 @@ async def free(_, msg: Message):
 
     until = None if duration == "0" else datetime.now(timezone.utc) + tdelta
     frees[target.id] = until
-    await msg.reply(f"✅ <b>{user_mention} has been freed</b> {'forever' if until is None else f'until {until}'}")
+    await msg.reply(f"✅ <b>{user_mention} has been freed</b> {'forever' if until is None else f'until {until}'}"
 	parse_mode="HTML"
+)
 
 @app.on_message(filters.command("unfree") & filters.group)
 async def unfree(_, msg: Message):
@@ -143,14 +153,16 @@ async def unfree(_, msg: Message):
     try:
         target = await app.get_users(msg.command[1])
     except:
-        await msg.reply("❌ <b>Couldn't find that user.</b>")
-        return
+        await msg.reply("❌ <b>Couldn't find that user.</b>"
 	parse_mode="HTML"
+)
+        return
 
     if target.id in frees:
         del frees[target.id]
-        await msg.reply(f"❌ <b>{target.mention} has been unfreed</b>. If this user is a model, ensure they <b>complete POP!</b>")
+        await msg.reply(f"❌ <b>{target.mention} has been unfreed</b>. If this user is a model, ensure they <b>complete POP!</b>"
 	parse_mode="HTML"
+)
 
 @app.on_message(filters.command("unfree_all") & filters.group)
 async def unfree_all(_, msg: Message):
@@ -158,8 +170,9 @@ async def unfree_all(_, msg: Message):
         return
     for uid in list(frees.keys()):
         del frees[uid]
-    await msg.reply("🧹 <b>All users have been unfree’d.</b>")
+    await msg.reply("🧹 <b>All users have been unfree’d.</b>"
 	parse_mode="HTML"
+)
 
 @app.on_message(filters.group)
 async def auto_delete(_, msg: Message):
@@ -188,7 +201,9 @@ async def on_chat_member_update(_, event):
             ):
                 continue
             frees[member.user.id] = None
-        await app.send_message(chat_id, "<b>Bot has joined! All non-admin users unfree’d for now!</b> ❌")
+        await app.send_message(chat_id, "<b>Bot has joined! All non-admin users unfree’d for now!</b> ❌"
+	parse_mode="HTML"
+)
     else:
         # Handle *new user joining the group*
         if (
