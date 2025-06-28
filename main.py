@@ -15,7 +15,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = 7868250691
 LOG_FILE = "verified_users.txt"
 
-print("\ud83d\udd27 [DEBUG] ENV Loaded:")
+print("[DEBUG] ENV Loaded:")
 print("API_ID:", API_ID)
 print("API_HASH:", API_HASH)
 print("BOT_TOKEN:", "HIDDEN" if BOT_TOKEN else "None")
