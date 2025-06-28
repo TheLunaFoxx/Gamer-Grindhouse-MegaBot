@@ -14,6 +14,7 @@ API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = 7868250691
 LOG_FILE = "verified_users.txt"
+BOT_USER = None  # Will store the bot's Telegram user ID after startup
 
 print("🔧 [DEBUG] ENV Loaded:")
 print("API_ID:", API_ID)
@@ -21,6 +22,13 @@ print("API_HASH:", API_HASH)
 print("BOT_TOKEN:", "HIDDEN" if BOT_TOKEN else "None")
 
 app = Client("megabot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+
+async def set_bot_user():
+    global BOT_USER
+    me = await app.get_me()
+    BOT_USER = me.id
+
+app.add_handler(filters.all, set_bot_user())
 
 frees = {}
 verifying = {}
@@ -227,4 +235,7 @@ async def on_chat_member_update(_, event):
 keep_alive()
 
 print("🤖 MegaBot is alive and slaying!")
-app.run()
+# Initialize the bot user ID before running
+app.start()
+asyncio.get_event_loop().run_until_complete(set_bot_user())
+app.idle()
